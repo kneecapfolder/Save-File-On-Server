@@ -17,6 +17,7 @@ def start():
 
 def close_app():
     client.send("close".encode('utf-8'))
+    client.close()
 
 
 
