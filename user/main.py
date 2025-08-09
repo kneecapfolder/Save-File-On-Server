@@ -62,8 +62,8 @@ def download_file():
         list_storage()
         return
     
-    file_data = client.get_file(filename)
-    if not file_data:
+    chunks = client.get_file(filename)
+    if not chunks:
         tkinter.messagebox.showerror(title='error', message=f'file not found!')
         return
 
@@ -79,7 +79,8 @@ def download_file():
 
     try:
         with open(path, 'wb') as file:
-            file.write(file_data)
+            for chunk in chunks:
+                file.write(chunk)
         tkinter.messagebox.showinfo(title='success', message=f'file written successfuly!\nfile path: {path}')
 
     except:

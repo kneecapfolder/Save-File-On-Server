@@ -20,68 +20,68 @@ def lst(communication_socket):
         for filename in dir:
             names += f'{filename}\n'
 
-        communication_socket.send(names.encode('utf-8'))
+        communication_socket.send(names.encode())
     else:
-        communication_socket.send('empty'.encode('utf-8'))
+        communication_socket.send('empty'.encode())
 
-    print(communication_socket.recv(1024).decode('utf-8'))
+    print(communication_socket.recv(1024).decode())
 
 
 
 
 # Send file to client
 def get(communication_socket):
-    communication_socket.send(f'action accepted!'.encode('utf-8'))
+    communication_socket.send(f'action accepted!'.encode())
 
-    filename = communication_socket.recv(1024).decode('utf-8')
+    filename = communication_socket.recv(1024).decode()
     print(f'filename is: {filename}')
     
-    bin_data = ''
-    size = 1024
+    chunks_list = []
 
     # Check if file exists
     try:
         with open(f'server/storage/{filename}', 'rb') as file:
-            bin_data = file.read()
-            file.seek(0, os.SEEK_END)
-            size = file.tell() 
-            communication_socket.send('found!'.encode('utf-8'))
-            print(communication_socket.recv(1024).decode('utf-8'))
+            chunk = file.read(1024)
+            while chunk:
+                chunks_list.append(chunk)
+                chunk = file.read(1024)
+
+            communication_socket.send('found!'.encode())
+            print(communication_socket.recv(1024).decode())
     except:
-        communication_socket.send('error!'.encode('utf-8'))
-        print(communication_socket.recv(1024).decode('utf-8'))
+        communication_socket.send('error!'.encode())
+        print(communication_socket.recv(1024).decode())
         return
 
+    communication_socket.send(f'{len(chunks_list)}'.encode())
+    print(communication_socket.recv(1024).decode())
 
-    communication_socket.send(f'{size}'.encode('utf-8'))
-    print(communication_socket.recv(1024).decode('utf-8'))
-
-    communication_socket.send(bin_data)
-    print(communication_socket.recv(1024).decode('utf-8'))
+    for chunk in chunks_list:
+        communication_socket.send(chunk)
+    
+    print(communication_socket.recv(1024).decode())
 
 
 
 # Save file to storage
 def upload(communication_socket):
-    communication_socket.send(f'action accepted!'.encode('utf-8'))
+    communication_socket.send(f'action accepted!'.encode())
     
-    size = int(communication_socket.recv(1024).decode('utf-8'))
-    communication_socket.send(f'file size is {size}!'.encode('utf-8'))
-    print(f"file size is {size}!")
-    
-    filename = communication_socket.recv(1024).decode('utf-8')
-    communication_socket.send(f'The file name is {filename}'.encode('utf-8'))
+    filename = communication_socket.recv(1024).decode()
+    communication_socket.send(f'The file name is {filename}'.encode())
     print(f"The file name is {filename}")
 
-    # Get the datat in binary
-    file_data = communication_socket.recv(size)
+
+    chunk_count = int(communication_socket.recv(1024).decode())
+    communication_socket.send(f'got chunk count! ({chunk_count})'.encode())
 
     with open(f'server/storage/{filename}', 'wb') as file:
-        file.write(file_data)
+        for _ in range(chunk_count):
+            file.write(communication_socket.recv(1024))
 
+            
     print("file saved!")
-
-
+    communication_socket.send('got the file'.encode())
 
 
 
@@ -91,7 +91,7 @@ print(f"Connected to {address}")
 
 while True:
 
-    action = communication_socket.recv(1024).decode('utf-8')
+    action = communication_socket.recv(1024).decode()
     print(f"action: {action}")
 
     if action == 'list':
@@ -114,8 +114,8 @@ while True:
 
     # communication_socket, address = server.accept()
     # print(f"Connected to {address}")
-    # message = communication_socket.recv(1024).decode('utf-8')
+    # message = communication_socket.recv(1024).decode()
     # print(f"The message from the client is: {message}")
-    # communication_socket.send(f"Message recived! Thanks!".encode('utf-8'))
+    # communication_socket.send(f"Message recived! Thanks!".encode())
     # communication_socket.close()
     # print(f"Connection with {address} terminated!")
